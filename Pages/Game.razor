@@ -1,0 +1,72 @@
+﻿@page "/game"
+
+<MudGrid>
+    <MudItem xs="3">
+        <MudPaper Class="mx-auto">
+            Score Board
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="6">
+        <MudPaper Class="mx-auto overflow-scroll" Height="500px" >
+            @foreach (var row in _board)
+            {
+                <div class="d-flex ma-2">
+                    @foreach (var space in row)
+                    {
+                        <MudPaper MinWidth="100px" Width="100px"
+                            MinHeight="100px" Height="100px"
+                            Class="mx-2">
+                                <MudText
+                                    Typo="Typo.h1"
+                                    Style="text-align: center;">
+                                    @if (space is not null)
+                                    {
+                                        @space.Letter
+                                    }
+                                </MudText>
+                        </MudPaper>
+                    }
+                </div>
+            }
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="3">
+        <MudPaper Class="mx-auto">
+            Other information
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private List<List<Space?>> _board = new List<List<Space?>>()
+    {
+        new List<Space?>(){ null, null, null },
+        new List<Space?>(){ null, null, null },
+        new List<Space?>(){ null, new Space() { Letter="X"}, null }
+    };
+    private int BoardWidth
+    {
+        get
+        {
+            int max = 0;
+            foreach (var row in _board)
+            {
+                if (max > row.Count)
+                {
+                    max = row.Count;
+                }
+            }
+            return max;
+        }
+    }
+
+    private int BoardHeight
+    {
+        get
+        {
+            return _board.Count;
+        }
+    }
+
+
+}
