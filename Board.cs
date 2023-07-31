@@ -1,17 +1,38 @@
-﻿namespace AndrewsWebsite;
+﻿using static MudBlazor.CategoryTypes;
 
-public class Board
+namespace AndrewsWebsite;
+
+public interface IBoard
 {
-    public Board()
+    public List<List<Space>>? Grid { get; set; }
+    int BoardWidth
     {
-        Grid = new List<List<Space>>()
+        get
         {
-            new List<Space>(){ new Space() { Letter = null }, new Space() { Letter = null }, new Space() { Letter = null } },
-            new List<Space>(){ new Space() { Letter = null }, new Space() { Letter = null }, new Space() { Letter = null } },
-            new List<Space>(){ new Space() { Letter = null }, new Space() { Letter = null }, new Space() { Letter = null } }};
+            int max = 0;
+            foreach (var row in Grid)
+            {
+                if (max > row.Count)
+                {
+                    max = row.Count;
+                }
+            }
+            return max;
+        }
     }
+    int BoardHeight
+    {
+        get
+        {
+            return Grid.Count;
+        }
+    }
+    void AddSymbol(int targetRow, int targetCol, string letter);
+}
 
-    public List<List<Space>> Grid { get; set; }
+public class Board : IBoard
+{
+    public List<List<Space>>? Grid { get; set; }
     public int BoardWidth
     {
         get
@@ -34,7 +55,7 @@ public class Board
             return Grid.Count;
         }
     }
-    public bool IsValidSpace(int row, int col)
+    private bool IsValidSpace(int row, int col)
     {
         if (ShouldExtendEdge(row, col))
         {
@@ -54,7 +75,7 @@ public class Board
         return string.IsNullOrEmpty(Grid[row][col].Letter);
     }
 
-    public bool ShouldExtendEdge(int row, int col)
+    private bool ShouldExtendEdge(int row, int col)
     {
         for (int i = row - 1; i < row + 1; i++)
         {
@@ -73,7 +94,7 @@ public class Board
 
         return false;
     }
-    public List<string> ExtendDirection(int row, int col)
+    private List<string> ExtendDirection(int row, int col)
     {
         var dirs = new List<string>();
         if (row+1 > BoardHeight)

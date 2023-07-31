@@ -1,4 +1,5 @@
 ﻿@page "/"
+@inject IBoard Board
 
 <MudGrid>
     <MudItem xs="3">
@@ -8,14 +9,16 @@
     </MudItem>
     <MudItem xs="6">
         <MudPaper Class="mx-auto overflow-scroll" Height="500px" >
-            @for (int i = 0; i < _board.Grid.Count(); i++)
+            @for (int i = 0; i < Board.BoardHeight; i++)
             {
-                var row = _board.Grid[i];
+                var row = Board.Grid[i];
                 <div class="d-flex ma-2">
-                    @for (int j = 0; j < _board.Grid.Count(); j++)
+                    @for (int j = 0; j < Board.BoardWidth; j++)
                     {
                         var space = row[j];
-                        <MudButton OnClick="@(() => _board.AddSymbol(i, j, "X"))">
+                        int iL = i;
+                        int jL = j;
+                        <MudButton OnClick="@(() => Board.AddSymbol(iL, jL, "X"))">
                             <MudPaper MinWidth="100px" Width="100px"
                                       MinHeight="100px" Height="100px"
                                       Class="mx-2">
@@ -41,8 +44,6 @@
 </MudGrid>
 
 @code {
-    private Board _board = new Board();
-
     private Player player1 = new Player()
     {
         Id = 0,
@@ -55,4 +56,14 @@
         DisplayName = "Player 2",
         Letter = "O"
     };
+
+    protected override void OnInitialized()
+    {
+        Board.Grid = new List<List<Space>>()
+        {
+            new List<Space>(){ new Space() { Letter = null }, new Space() { Letter = null }, new Space() { Letter = null } },
+            new List<Space>(){ new Space() { Letter = null }, new Space() { Letter = null }, new Space() { Letter = null } },
+            new List<Space>(){ new Space() { Letter = null }, new Space() { Letter = null }, new Space() { Letter = null } }};
+        base.OnInitialized();
+    }
 }
