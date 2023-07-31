@@ -1,4 +1,4 @@
-﻿@page "/game"
+﻿@page "/"
 
 <MudGrid>
     <MudItem xs="3">
@@ -8,23 +8,26 @@
     </MudItem>
     <MudItem xs="6">
         <MudPaper Class="mx-auto overflow-scroll" Height="500px" >
-            @foreach (var row in _board)
+            @for (int i = 0; i < _board.Grid.Count(); i++)
             {
+                var row = _board.Grid[i];
                 <div class="d-flex ma-2">
-                    @foreach (var space in row)
+                    @for (int j = 0; j < _board.Grid.Count(); j++)
                     {
-                        <MudPaper MinWidth="100px" Width="100px"
-                            MinHeight="100px" Height="100px"
-                            Class="mx-2">
-                                <MudText
-                                    Typo="Typo.h1"
-                                    Style="text-align: center;">
-                                    @if (space is not null)
+                        var space = row[j];
+                        <MudButton OnClick="@(() => _board.AddSymbol(i, j, "X"))">
+                            <MudPaper MinWidth="100px" Width="100px"
+                                      MinHeight="100px" Height="100px"
+                                      Class="mx-2">
+                                <MudText Typo="Typo.h1"
+                                         Style="text-align: center;">
+                                    @if (string.IsNullOrEmpty(space.Letter))
                                     {
                                         @space.Letter
                                     }
                                 </MudText>
-                        </MudPaper>
+                            </MudPaper>
+                        </MudButton>
                     }
                 </div>
             }
@@ -38,35 +41,18 @@
 </MudGrid>
 
 @code {
-    private List<List<Space?>> _board = new List<List<Space?>>()
+    private Board _board = new Board();
+
+    private Player player1 = new Player()
     {
-        new List<Space?>(){ null, null, null },
-        new List<Space?>(){ null, null, null },
-        new List<Space?>(){ null, new Space() { Letter="X"}, null }
+        Id = 0,
+        DisplayName = "Player 1",
+        Letter = "X"
     };
-    private int BoardWidth
+    private Player player2 = new Player()
     {
-        get
-        {
-            int max = 0;
-            foreach (var row in _board)
-            {
-                if (max > row.Count)
-                {
-                    max = row.Count;
-                }
-            }
-            return max;
-        }
-    }
-
-    private int BoardHeight
-    {
-        get
-        {
-            return _board.Count;
-        }
-    }
-
-
+        Id = 1,
+        DisplayName = "Player 2",
+        Letter = "O"
+    };
 }
