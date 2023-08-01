@@ -1,42 +1,47 @@
 ﻿@page "/"
 @inject IBoard Board
+@inject IJSRuntime JS
 
 <MudGrid>
-    <MudItem xs="3">
+    <MudItem xs="2">
         <MudPaper Class="mx-auto">
             Score Board
         </MudPaper>
     </MudItem>
-    <MudItem xs="6">
-        <MudPaper Class="mx-auto overflow-scroll" Height="500px" >
-            @for (int i = 0; i < Board.BoardHeight; i++)
-            {
-                var row = Board.Grid[i];
-                <div class="d-flex ma-2">
-                    @for (int j = 0; j < Board.BoardWidth; j++)
-                    {
-                        var space = row[j];
-                        int iL = i;
-                        int jL = j;
-                        <MudButton OnClick="@(() => Board.AddSymbol(iL, jL, "X"))">
-                            <MudPaper MinWidth="100px" Width="100px"
-                                      MinHeight="100px" Height="100px"
-                                      Class="mx-2">
-                                <MudText Typo="Typo.h1"
-                                         Style="text-align: center;">
-                                    @if (string.IsNullOrEmpty(space.Letter))
-                                    {
-                                        @space.Letter
-                                    }
-                                </MudText>
-                            </MudPaper>
-                        </MudButton>
-                    }
-                </div>
-            }
+    <MudItem xs="8">
+        <MudPaper Class='@("overflow-container mx-auto overflow-scroll d-flex" + (overflowing ? "" : " justify-center align-center"))'
+            Height="88vh">
+            <div class="d-inline-block"
+                style="background-color: orange;">
+                @for (int i = 0; i < Board.BoardHeight; i++)
+                {
+                    var row = Board.Grid[i];
+                    <div class="ma-2" style="white-space: nowrap;">
+                        @for (int j = 0; j < Board.BoardWidth; j++)
+                        {
+                            var space = row[j];
+                            int iL = i;
+                            int jL = j;
+                            <MudButton OnClick="@(() => OnClick(iL, jL, "X"))">
+                                <MudPaper MinWidth="100px" Width="100px"
+                                    MinHeight="100px" Height="100px"
+                                    Class="mx-2">
+                                    <MudText Typo="Typo.h1"
+                                        Style="text-align: center;">
+                                        @if (!string.IsNullOrEmpty(space.Letter))
+                                        {
+                                            @space.Letter
+                                        }
+                                    </MudText>
+                                </MudPaper>
+                            </MudButton>
+                        }
+                    </div>
+                }
+            </div>
         </MudPaper>
     </MudItem>
-    <MudItem xs="3">
+    <MudItem xs="2">
         <MudPaper Class="mx-auto">
             Other information
         </MudPaper>
@@ -44,6 +49,9 @@
 </MudGrid>
 
 @code {
+    private bool initialized = false;
+    private bool overflowingX = false;
+    private bool overflowingX = false;
     private Player player1 = new Player()
     {
         Id = 0,
@@ -59,11 +67,17 @@
 
     protected override void OnInitialized()
     {
-        Board.Grid = new List<List<Space>>()
-        {
-            new List<Space>(){ new Space() { Letter = null }, new Space() { Letter = null }, new Space() { Letter = null } },
-            new List<Space>(){ new Space() { Letter = null }, new Space() { Letter = null }, new Space() { Letter = null } },
-            new List<Space>(){ new Space() { Letter = null }, new Space() { Letter = null }, new Space() { Letter = null } }};
+        Board.Grid = new List<List<Space>>() {
+            new List<Space>(){ new Space() { Letter = null }} };
+
+        initialized = true;
         base.OnInitialized();
+    }
+
+    private async Task OnClick(int i, int j, string letter)
+    {
+        Board.AddSymbol(i, j, "X");
+        overflowingX = await JS.InvokeAsync<bool>("IsOverflowingX", ".overflow-container");
+        overflowingY = await JS.InvokeAsync<bool>("IsOverflowingY", ".overflow-container");
     }
 }

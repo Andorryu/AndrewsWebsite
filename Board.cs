@@ -1,4 +1,5 @@
-﻿using static MudBlazor.CategoryTypes;
+﻿using MudBlazor;
+using static MudBlazor.CategoryTypes;
 
 namespace AndrewsWebsite;
 
@@ -12,7 +13,7 @@ public interface IBoard
             int max = 0;
             foreach (var row in Grid)
             {
-                if (max > row.Count)
+                if (max < row.Count)
                 {
                     max = row.Count;
                 }
@@ -40,7 +41,7 @@ public class Board : IBoard
             int max = 0;
             foreach (var row in Grid)
             {
-                if (max > row.Count)
+                if (max < row.Count)
                 {
                     max = row.Count;
                 }
@@ -57,47 +58,53 @@ public class Board : IBoard
     }
     private bool IsValidSpace(int row, int col)
     {
-        if (ShouldExtendEdge(row, col))
+        // first placement
+        if (BoardHeight == 1)
         {
             return true;
         }
 
-        for (int i = row - 1; i < row + 1; i++)
+        // next to another space
+        for (int i = row-1; i <= row+1; i++)
         {
-            for (int j = col - 1; j < col + 1; j++)
+            for (int j = col-1; j <= col+1; j++)
             {
-                if (!string.IsNullOrEmpty(Grid[i][j].Letter))
+                if (i != row || j != col) // every space next to (row, col) (exclude (row, col))
                 {
-                    return string.IsNullOrEmpty(Grid[row][col].Letter);
+                    if (i >= 0 && i < BoardHeight && j >= 0 && j < BoardWidth)
+                    {
+                        if (!string.IsNullOrEmpty(Grid[i][j].Letter))
+                        {
+                            return true;
+                        }
+                    }
                 }
             }
         }
-        return string.IsNullOrEmpty(Grid[row][col].Letter);
-    }
-
-    private bool ShouldExtendEdge(int row, int col)
-    {
-        for (int i = row - 1; i < row + 1; i++)
-        {
-            if (i < BoardHeight || i >= BoardHeight)
-            {
-                return true;
-            }
-        }
-        for (int j = col - 1; j < col + 1; j++)
-        {
-            if (j < BoardWidth || j >= BoardWidth)
-            {
-                return true;
-            }
-        }
-
         return false;
+    }
+    private List<Space> CreateNewRow()
+    {
+        var newRow = new List<Space>();
+        for (int i = 0; i < BoardWidth; i++)
+        {
+            newRow.Add(new Space());
+        }
+        return newRow;
+    }
+    private List<Space> CopyRow(List<Space> row)
+    {
+        var newRow = new List<Space>();
+        foreach (Space space in row)
+        {
+            newRow.Add(space.Copy());
+        }
+        return newRow;
     }
     private List<string> ExtendDirection(int row, int col)
     {
         var dirs = new List<string>();
-        if (row+1 > BoardHeight)
+        if (row+1 >= BoardHeight)
         {
             dirs.Add("down");
         }
@@ -105,7 +112,7 @@ public class Board : IBoard
         {
             dirs.Add("up");
         }
-        if (col+1 > BoardWidth)
+        if (col+1 >= BoardWidth)
         {
             dirs.Add("right");
         }
@@ -117,33 +124,25 @@ public class Board : IBoard
     }
     private void AddRowAbove()
     {
-        Grid.Add(
-            new List<Space>() { 
-                new Space() { Letter = null },
-                new Space() { Letter = null },
-                new Space() { Letter = null } });
-
-        // move all spaces down a row
-        for (int i = BoardHeight-1; i > 0; i--)
-        {
-            Grid[i] = Grid[i-1];
-        }
+        Grid.Insert(0, CreateNewRow());
     }
     private void AddRowBelow()
     {
-        Grid.Add(
-            new List<Space>() {
-                new Space() { Letter = null },
-                new Space() { Letter = null },
-                new Space() { Letter = null } });
+        Grid.Add(CreateNewRow());
     }
     private void AddColLeft()
     {
-
+        foreach (var row in Grid)
+        {
+            row.Insert(0, new Space());
+        }
     }
     private void AddColRight()
     {
-
+        foreach (var row in Grid)
+        {
+            row.Add(new Space());
+        }
     }
 
     public void AddSymbol(int targetRow, int targetCol, string letter)
@@ -155,26 +154,23 @@ public class Board : IBoard
 
         Grid[targetRow][targetCol].Letter = letter;
 
-        if (ShouldExtendEdge(targetRow, targetCol))
+        foreach (string dir in ExtendDirection(targetRow, targetCol))
         {
-            foreach (string dir in ExtendDirection(targetRow, targetCol))
+            if (dir == "up")
             {
-                if (dir == "up")
-                {
-                    AddRowAbove();
-                }
-                if (dir == "down")
-                {
-                    AddRowBelow();
-                }
-                if (dir == "left")
-                {
-                    AddColLeft();
-                }
-                if (dir == "right")
-                {
-                    AddColRight();
-                }
+                AddRowAbove();
+            }
+            if (dir == "down")
+            {
+                AddRowBelow();
+            }
+            if (dir == "left")
+            {
+                AddColLeft();
+            }
+            if (dir == "right")
+            {
+                AddColRight();
             }
         }
     }
