@@ -2,17 +2,67 @@
 @inject IBoard Board
 @inject IJSRuntime JS
 
+@* New Game Settings *@
+<MudDialog IsVisible="@showNewGameSettings" Options="new DialogOptions() { 
+    FullWidth=true, DisableBackdropClick=true}">
+    <TitleContent>
+        <MudIcon Icon="@Icons.Material.Filled.Settings" Size="Size.Large"
+            Class="fixed"/>
+        <MudText Typo="Typo.h5" Class="d-flex justify-center align-center mt-5">
+            New Game Settings
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText>Player Order:</MudText>
+        <MudDropContainer T="Player" Items="players" ItemsSelector="(player, name) => true">
+            <ChildContent>
+                <MudPaper Style="background-color: lightgray;" Class="pa-5">
+                    <MudDropZone T="Player" AllowReorder="true"
+                                 Style='@($"height: {90*players.Count}px;")' />
+                    <div class="d-flex justify-center align-center">
+                        <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled"
+                            Color="Color.Secondary" Style="color: black;"
+                            OnClick="@AddNewPlayer">Add Player</MudButton>
+                    </div>
+                </MudPaper>
+            </ChildContent>
+            <ItemRenderer>
+                <MudPaper Class="my-5">
+                    <MudGrid>
+                        <MudItem xs="2" Class="d-flex justify-center align-center">
+                            <MudIcon Icon="@Icons.Material.Filled.Menu" />
+                        </MudItem>
+                        <MudItem xs="5">
+                            <MudTextField Label="Name" @bind-Value="context.DisplayName" />
+                        </MudItem>
+                        <MudItem xs="3">
+                            <MudTextField Label="Letter" @bind-Value="context.Letter" />
+                        </MudItem>
+                        <MudItem xs="2">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                                OnClick="@(() => DeletePlayer(context))" Disabled="@FewPlayers" />
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+            </ItemRenderer>
+        </MudDropContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Error"
+            OnClick="@OnCancel">Cancel</MudButton>
+        <MudButton Color="Color.Success"
+            OnClick="@OnStartGame">Start Game</MudButton>
+    </DialogActions>
+</MudDialog>
+
+
+@* Page Content *@
 <MudGrid>
-    <MudItem xs="2">
-        <MudPaper Class="mx-auto">
-            Score Board
-        </MudPaper>
-    </MudItem>
-    <MudItem xs="8">
-        <MudPaper Class='@("overflow-container mx-auto overflow-scroll d-flex" + (overflowing ? "" : " justify-center align-center"))'
+    <MudItem xs="9">
+        <MudPaper Class='@("overflow-container mx-auto overflow-scroll d-flex" + (overflowingX ? "" : " justify-center") + (overflowingY ? "" : " align-center"))'
+                  Style="background-color: orange;"
             Height="88vh">
-            <div class="d-inline-block"
-                style="background-color: orange;">
+            <div class="d-inline-block">
                 @for (int i = 0; i < Board.BoardHeight; i++)
                 {
                     var row = Board.Grid[i];
@@ -22,7 +72,7 @@
                             var space = row[j];
                             int iL = i;
                             int jL = j;
-                            <MudButton OnClick="@(() => OnClick(iL, jL, "X"))">
+                            <MudButton OnClick="@(() => OnClickTile(iL, jL, "X"))">
                                 <MudPaper MinWidth="100px" Width="100px"
                                     MinHeight="100px" Height="100px"
                                     Class="mx-2">
@@ -41,29 +91,61 @@
             </div>
         </MudPaper>
     </MudItem>
-    <MudItem xs="2">
-        <MudPaper Class="mx-auto">
-            Other information
-        </MudPaper>
+    <MudItem xs="3">
+        <div class="d-flex justify-center align-center mb-5">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       OnClick="@(() => showNewGameSettings = true)">Start a new Game</MudButton>
+        </div>
+        @if (!gameStarted)
+        {
+            <MudText Class="d-flex justify-center align-center">Game Not Started</MudText>
+        }
+        else
+        {
+            <MudPaper Class="mx-auto pa-5" Style="background-color: orange; color: white;">
+                <MudGrid>
+                    @foreach (var player in players)
+                    {
+                        <MudItem xs="12">
+                            <MudText Class="d-flex justify-center align-center">@player.DisplayName --- @player.Letter</MudText>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </MudPaper>
+        }
     </MudItem>
 </MudGrid>
 
 @code {
     private bool initialized = false;
     private bool overflowingX = false;
-    private bool overflowingX = false;
-    private Player player1 = new Player()
+    private bool overflowingY = false;
+    private bool addingPlayer = false;
+    private bool gameStarted = false;
+    private bool FewPlayers
     {
-        Id = 0,
-        DisplayName = "Player 1",
-        Letter = "X"
-    };
-    private Player player2 = new Player()
+        get
+        {
+            return players.Count <= 2;
+        }
+    }
+    private List<Player> players = new List<Player>()
     {
-        Id = 1,
-        DisplayName = "Player 2",
-        Letter = "O"
+        new Player()
+        {
+            DisplayName = "Player 1",
+            Letter = "X",
+            Id = null
+        },
+        new Player()
+        {
+            DisplayName = "Player 2",
+            Letter = "O",
+            Id = null
+        }
     };
+    private bool showNewGameSettings = true;
+    private string errorMessage = "";
 
     protected override void OnInitialized()
     {
@@ -74,7 +156,46 @@
         base.OnInitialized();
     }
 
-    private async Task OnClick(int i, int j, string letter)
+    private void AddNewPlayer()
+    {
+        players.Add(new Player()
+        {
+            DisplayName = "New Player",
+            Letter = "X"
+        });
+    }
+    private void DeletePlayer(Player player)
+    {
+        players.Remove(player);
+    }
+    private void OnCancel()
+    {
+        showNewGameSettings = false;
+        errorMessage = "";
+    }
+    private void OnStartGame()
+    {
+        for (int i = 0; i < players.Count; i++)
+        {
+            for (int j = 0; j < players.Count; j++)
+            {
+                if (i != j)
+                {
+                    if (players[i].DisplayName == players[j].DisplayName ||
+                        players[i].Letter == players[j].Letter)
+                    {
+                        errorMessage = "Two or more players share the same name or letter";
+                        return;
+                    }
+                }
+            }
+        }
+        showNewGameSettings = false;
+        errorMessage = "";
+        gameStarted = true;
+    }
+
+    private async Task OnClickTile(int i, int j, string letter)
     {
         Board.AddSymbol(i, j, "X");
         overflowingX = await JS.InvokeAsync<bool>("IsOverflowingX", ".overflow-container");
